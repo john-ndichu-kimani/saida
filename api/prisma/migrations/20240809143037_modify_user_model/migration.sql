@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "User" ALTER COLUMN "phoneNumber" SET DATA TYPE TEXT,
+ALTER COLUMN "resetPasswordToken" SET DATA TYPE TEXT,
+ALTER COLUMN "verificationToken" SET DATA TYPE TEXT;

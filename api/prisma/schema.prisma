@@ -1,0 +1,47 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Models
+
+model User {
+  id                        String   @id @default(uuid())
+  googleId                  String?  @unique
+  facebookId                String?  @unique
+  email                     String   @unique
+  password                  String
+  firstName                 String
+  lastName                  String
+  phoneNumber               String?
+  profileImage              String   @default("https://img.freepik.com/free-psd/3d-illustration-human-avatar-profile_23-2150671142.jpg?t=st=1721767806~exp=1721771406~hmac=2eabf978612ccdfd2ea6f27a59a484ddbee8498786207e1cb8f92a69a5ef94ee&w=740")
+  role                      Role     @default(CLIENT)
+  isVerified                Boolean  @default(false)
+  status                    Status   @default(ACTIVE)
+  lastLogin                 DateTime?
+  resetPasswordToken        String?
+  resetPasswordExpiresAt    DateTime?
+  verificationToken         String?
+  verificationTokenExpiresAt DateTime?
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+}
+
+
+enum Role {
+  CLIENT
+  CAREGIVER
+  ADMIN
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+}
