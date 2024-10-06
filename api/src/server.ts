@@ -6,6 +6,9 @@ import cookieParser from 'cookie-parser';
 import passport from 'passport';
 import './strategies/google.strategy'; 
 import './strategies/facebook.strategy'; 
+
+import userRouter from './routes/user.routes';
+import appointmentRouter from './routes/appointment.routes';
 import authRoutes from './routes/auth.routes';
 
 dotenv.config();
@@ -36,8 +39,14 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Use the authentication routes
+//authentication routes
 app.use('/api/v1/auth', authRoutes);
+
+//user routes
+app.use('/api/v1',userRouter)
+
+//appointment booking routes
+app.use('/api/v1',appointmentRouter)
 
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

@@ -34,6 +34,8 @@ const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const passport_1 = __importDefault(require("passport"));
 require("./strategies/google.strategy");
 require("./strategies/facebook.strategy");
+const user_routes_1 = __importDefault(require("./routes/user.routes"));
+const appointment_routes_1 = __importDefault(require("./routes/appointment.routes"));
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
@@ -58,8 +60,12 @@ app.use((0, express_session_1.default)({
 // Passport middleware
 app.use(passport_1.default.initialize());
 app.use(passport_1.default.session());
-// Use the authentication routes
+//authentication routes
 app.use('/api/v1/auth', auth_routes_1.default);
+//user routes
+app.use('/api/v1', user_routes_1.default);
+//appointment booking routes
+app.use('/api/v1', appointment_routes_1.default);
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Server Error:', err); // Log error details to console

@@ -4,11 +4,12 @@ import crypto from 'crypto';
 import prisma from '../utils/init.prisma.util';
 import bcryptjs from 'bcryptjs';
 import { LoginDetails, Role, Status, User } from '../interfaces/user.interface';
-import sendEmail from './mail.service';
+
 
 import { Response } from 'express';
 import { generateTokenAndSetCookie } from '../utils/generateToken';
 import { use } from 'passport';
+import sendEmail from '../utils/email.util';
 
 export class AuthService {
   async registerUser(user: User) {
@@ -133,6 +134,18 @@ export class AuthService {
 
       if(!user.isVerified){
         return { success: false, message: 'Your account is unverified!' };
+      }
+
+      if (!user.password) {
+        // User signed up with Google OAuth2, send password reset link
+        return {
+          message: "You signed up with Google. Click forgot password to set a new password to continue.",
+        };
+      }
+      
+       // Check if user is inactive
+       if (user.status === Status.INACTIVE) {
+        return { error: 'Your account is deactivated. Please contact admin for activation.' };
       }
 
       // Compare password

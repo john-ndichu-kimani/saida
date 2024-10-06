@@ -19,8 +19,8 @@ const crypto_1 = __importDefault(require("crypto"));
 const init_prisma_util_1 = __importDefault(require("../utils/init.prisma.util"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const user_interface_1 = require("../interfaces/user.interface");
-const mail_service_1 = __importDefault(require("./mail.service"));
 const generateToken_1 = require("../utils/generateToken");
+const email_util_1 = __importDefault(require("../utils/email.util"));
 class AuthService {
     registerUser(user) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -55,7 +55,7 @@ class AuthService {
                     },
                 });
                 // Send verification email
-                yield (0, mail_service_1.default)({
+                yield (0, email_util_1.default)({
                     to: user.email,
                     subject: 'Verify Your Email!',
                     template: 'verifyEmail',
@@ -101,7 +101,7 @@ class AuthService {
                     },
                 });
                 // Send welcome email
-                yield (0, mail_service_1.default)({
+                yield (0, email_util_1.default)({
                     to: user.email,
                     subject: 'Welcome To Saida HealthCare Agency',
                     template: 'welcome',
@@ -134,6 +134,16 @@ class AuthService {
                 }
                 if (!user.isVerified) {
                     return { success: false, message: 'Your account is unverified!' };
+                }
+                if (!user.password) {
+                    // User signed up with Google OAuth2, send password reset link
+                    return {
+                        message: "You signed up with Google. Click forgot password to set a new password to continue.",
+                    };
+                }
+                // Check if user is inactive
+                if (user.status === user_interface_1.Status.INACTIVE) {
+                    return { error: 'Your account is deactivated. Please contact admin for activation.' };
                 }
                 // Compare password
                 const isPasswordValid = bcryptjs_1.default.compareSync(logins.password, user.password);
@@ -183,7 +193,7 @@ class AuthService {
                 });
                 const resetUrl = `${process.env.FRONTEND_URL}/${resetToken}`;
                 // Send reset password email
-                yield (0, mail_service_1.default)({
+                yield (0, email_util_1.default)({
                     to: user.email,
                     subject: 'Reset Your Password',
                     template: 'resetPassword',
@@ -225,7 +235,7 @@ class AuthService {
                     },
                 });
                 // Send reset success email
-                yield (0, mail_service_1.default)({
+                yield (0, email_util_1.default)({
                     to: user.email,
                     subject: 'Password Reset Successful',
                     template: 'resetSuccess',

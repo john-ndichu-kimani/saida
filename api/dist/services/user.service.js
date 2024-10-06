@@ -14,59 +14,154 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserService = void 0;
 const user_interface_1 = require("../interfaces/user.interface");
-const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const init_prisma_util_1 = __importDefault(require("../utils/init.prisma.util"));
 class UserService {
-    fetchAllUsers() {
+    fetchAllClients() {
         return __awaiter(this, arguments, void 0, function* (page = 1, pageSize = 10, filter = {}) {
             try {
                 if (page < 1 || pageSize < 1) {
                     return { error: "Invalid pagination parameters" };
                 }
                 const skip = (page - 1) * pageSize;
-                const users = yield init_prisma_util_1.default.user.findMany({
+                const clients = yield init_prisma_util_1.default.user.findMany({
                     where: Object.assign({ role: user_interface_1.Role.CLIENT }, filter),
+                    select: {
+                        id: true,
+                        profileImage: true,
+                        firstName: true,
+                        lastName: true,
+                        email: true,
+                        phoneNumber: true,
+                        status: true,
+                        bookingsAsClient: true
+                    },
                     skip: skip,
                     take: pageSize,
-                    orderBy: { createdAt: 'desc' },
+                    orderBy: { createdAt: "desc" },
                 });
                 const totalUsers = yield init_prisma_util_1.default.user.count({
-                    where: Object.assign({ role: user_interface_1.Role.CLIENT }, filter),
+                    where: Object.assign({}, filter),
                 });
                 return {
-                    users,
+                    clients,
                     totalPages: Math.ceil(totalUsers / pageSize),
                     currentPage: page,
                     totalUsers,
                 };
             }
             catch (e) {
-                console.error("Error fetching users:", e.message);
+                console.error("Error fetching users:", e);
                 return { error: "An error occurred while fetching users" };
             }
         });
     }
-    updateUser(userId, updatedData) {
-        return __awaiter(this, void 0, void 0, function* () {
+    fetchAllCaregivers() {
+        return __awaiter(this, arguments, void 0, function* (page = 1, pageSize = 10, filter = {}) {
             try {
-                if (updatedData.password) {
-                    updatedData.password = bcryptjs_1.default.hashSync(updatedData.password, 10);
+                if (page < 1 || pageSize < 1) {
+                    return { error: "Invalid pagination parameters" };
                 }
-                const updatedUser = yield init_prisma_util_1.default.user.update({
-                    where: { id: userId },
-                    data: Object.assign(Object.assign({}, updatedData), { updatedAt: new Date() }),
+                const skip = (page - 1) * pageSize;
+                const caregivers = yield init_prisma_util_1.default.user.findMany({
+                    where: {
+                        role: 'CAREGIVER', // Ensure the user has the CAREGIVER role
+                    },
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                        profileBio: true,
+                        specialization: true,
+                        certificates: true,
+                        phoneNumber: true,
+                        profileImage: true,
+                        services: {
+                            select: {
+                                id: true,
+                                name: true,
+                                description: true,
+                                price: true,
+                                duration: true,
+                                imageUrl: true,
+                                bookings: true
+                            }
+                        }
+                    },
+                    skip: skip,
+                    take: pageSize,
+                });
+                const totalUsers = yield init_prisma_util_1.default.user.count({
+                    where: Object.assign({}, filter),
                 });
                 return {
-                    message: "User updated successfully",
-                    updatedUser,
+                    caregivers,
+                    totalPages: Math.ceil(totalUsers / pageSize),
+                    currentPage: page,
+                    totalUsers,
                 };
             }
             catch (e) {
-                console.error("Error updating user:", e.message);
-                return { error: "An error occurred while updating the user" };
+                console.error("Error fetching users:", e);
+                return { error: "An error occurred while fetching users" };
             }
         });
     }
+    getUserById(userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const user = yield init_prisma_util_1.default.user.findUnique({
+                    where: {
+                        id: userId,
+                    },
+                    select: {
+                        id: true,
+                        email: true,
+                        firstName: true,
+                        lastName: true,
+                        profileImage: true,
+                        lastLogin: true,
+                        phoneNumber: true,
+                    },
+                });
+                if (!user) {
+                    return {
+                        error: `User with the provided ID ${userId} was not found.`,
+                    };
+                }
+                // Return the user if found
+                return {
+                    user,
+                };
+            }
+            catch (error) {
+                console.error("Error occurred while fetching user:", error);
+                return {
+                    error: "An error occurred while fetching the user.",
+                };
+            }
+        });
+    }
+    // async updateUser(userId: string, updatedData: Partial<User>) {
+    //   try {
+    //     if (updatedData.password) {
+    //       updatedData.password = bcrypt.hashSync(updatedData.password, 10);
+    //     }
+    //     const updatedUser = await prisma.user.update({
+    //       where: { id: userId },
+    //       data: {
+    //         ...updatedData,
+    //         updatedAt: new Date(),
+    //       },
+    //     });
+    //     return {
+    //       message: "User updated successfully",
+    //       updatedUser,
+    //     };
+    //   } catch (e: any) {
+    //     console.error("Error updating user:", e.message);
+    //     return { error: "An error occurred while updating the user" };
+    //   }
+    // }
     activateUser(userId) {
         return __awaiter(this, void 0, void 0, function* () {
             try {

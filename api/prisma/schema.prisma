@@ -13,27 +13,130 @@ datasource db {
 // Models
 
 model User {
-  id                        String   @id @default(uuid())
-  googleId                  String?  @unique
-  facebookId                String?  @unique
-  email                     String   @unique
-  password                  String
-  firstName                 String
-  lastName                  String
-  phoneNumber               String?
-  profileImage              String   @default("https://img.freepik.com/free-psd/3d-illustration-human-avatar-profile_23-2150671142.jpg?t=st=1721767806~exp=1721771406~hmac=2eabf978612ccdfd2ea6f27a59a484ddbee8498786207e1cb8f92a69a5ef94ee&w=740")
-  role                      Role     @default(CLIENT)
-  isVerified                Boolean  @default(false)
-  status                    Status   @default(ACTIVE)
-  lastLogin                 DateTime?
-  resetPasswordToken        String?
-  resetPasswordExpiresAt    DateTime?
-  verificationToken         String?
+  id                         String    @id @default(uuid())
+  googleId                   String?   @unique
+  facebookId                 String?   @unique
+  email                      String    @unique
+  password                   String
+  firstName                  String
+  lastName                   String
+  phoneNumber                String?
+  profileImage               String    @default("https://img.freepik.com/free-psd/3d-illustration-human-avatar-profile_23-2150671142.jpg?t=st=1721767806~exp=1721771406~hmac=2eabf978612ccdfd2ea6f27a59a484ddbee8498786207e1cb8f92a69a5ef94ee&w=740")
+  role                       Role      @default(CLIENT)
+  isVerified                 Boolean   @default(false)
+  status                     Status    @default(ACTIVE)
+  lastLogin                  DateTime?
+  resetPasswordToken         String?
+  resetPasswordExpiresAt     DateTime?
+  verificationToken          String?
   verificationTokenExpiresAt DateTime?
-  createdAt                 DateTime @default(now())
-  updatedAt                 DateTime @updatedAt
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+
+  // Caregiver-specific fields (optional)
+  profileBio              String?
+  specialization          String?
+  certificates            String[]
+
+  // Relationships
+  payments                Payment[]
+  messagesSent            Message[]        @relation("SenderMessages")
+  messagesReceived        Message[]        @relation("ReceiverMessages")
+  videoCallsMade          VideoCall[]      @relation("CallerVideoCalls")
+  videoCallsReceived      VideoCall[]      @relation("ReceiverVideoCalls")
+  reports                 Report[]
+  recommendationsGiven    Recommendation[] @relation("ClientRecommendations")
+  recommendationsReceived Recommendation[] @relation("CaregiverRecommendations")
+  bookingsAsClient        Booking[]        @relation("ClientBookings")
+  bookingsAsCaregiver     Booking[]        @relation("CaregiverBookings")
+  services                CaregiverService[]
+
 }
 
+model CaregiverService {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  price       Float
+  duration    Int?
+  imageUrl    String?
+  caregiverId String
+  caregiver   User      @relation(fields: [caregiverId], references: [id])
+  bookings    Booking[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Booking {
+  id                 String            @id @default(uuid())
+  clientId           String
+  client             User              @relation("ClientBookings", fields: [clientId], references: [id])
+  caregiverId        String
+  transactionId      String?
+  caregiver          User              @relation("CaregiverBookings", fields: [caregiverId], references: [id])
+  caregiverServiceId String?
+  CaregiverService   CaregiverService? @relation(fields: [caregiverServiceId], references: [id])
+  startDate          DateTime
+  endDate            DateTime
+  status             BookingStatus
+  reason             String
+  phoneNumber        String? // Optional phone number for M-Pesa payments
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+}
+
+model Payment {
+  id          String        @id @default(uuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  amount      Float
+  status      PaymentStatus
+  paymentDate DateTime      @default(now())
+  transactionId String 
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  senderId   String
+  sender     User     @relation("SenderMessages", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User     @relation("ReceiverMessages", fields: [receiverId], references: [id])
+  content    String
+  createdAt  DateTime @default(now())
+}
+
+model VideoCall {
+  id          String          @id @default(uuid())
+  callerId    String
+  caller      User            @relation("CallerVideoCalls", fields: [callerId], references: [id])
+  receiverId  String
+  receiver    User            @relation("ReceiverVideoCalls", fields: [receiverId], references: [id])
+  scheduledAt DateTime
+  duration    Int?
+  status      VideoCallStatus
+  createdAt   DateTime        @default(now())
+}
+
+model Recommendation {
+  id          String    @id @default(uuid())
+  clientId    String
+  client      User      @relation("ClientRecommendations", fields: [clientId], references: [id])
+  caregiverId String
+  caregiver   User      @relation("CaregiverRecommendations", fields: [caregiverId], references: [id])
+  score       Float
+  feedback    String?
+  createdAt   DateTime  @default(now())
+}
+
+model Report {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  content   String
+  createdAt DateTime @default(now())
+}
+
+// Enums
 
 enum Role {
   CLIENT
@@ -44,4 +147,26 @@ enum Role {
 enum Status {
   ACTIVE
   INACTIVE
+}
+
+enum BookingStatus {
+  PENDING
+  PENDING_PAYMENT
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum VideoCallStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
 }
